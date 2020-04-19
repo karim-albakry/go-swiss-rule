@@ -3,7 +3,7 @@ package go_swiss_rule
 import (
 	"fmt"
 	"github.com/antonmedv/expr"
-	"go-swiss-rule/utils/errors"
+	"github.com/karim-albakry/go-swiss-rule/utils/errors"
 	"reflect"
 )
 
