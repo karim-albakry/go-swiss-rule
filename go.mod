@@ -1,4 +1,4 @@
-module go-swiss-rule
+module github.com/karim-albakry/go-swiss-rule
 
 go 1.13
 
