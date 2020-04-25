@@ -69,5 +69,5 @@ func EvalAndInvoke(input map[string]interface{}, rules []*Rule) error {
 			return errors.SimpleError("Invalid Input")
 		}
 	}
-	return nil
+	return errors.SimpleError("No conditions to execute, review your conditions keys.")
 }
