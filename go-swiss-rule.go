@@ -5,32 +5,51 @@ import (
 	"github.com/antonmedv/expr"
 	"github.com/karim-albakry/go-swiss-rule/utils/errors"
 	"reflect"
+	"strings"
 )
+
+func nestedMapLookup(m map[string]interface{}, ks ...string) (rval interface{}, err error) {
+	var ok bool
+
+	if len(ks) == 0 { // degenerate input
+		return nil, fmt.Errorf("NestedMapLookup needs at least one key")
+	}
+	if rval, ok = m[ks[0]]; !ok {
+		return nil, fmt.Errorf("key not found; remaining keys: %v", ks)
+	} else if len(ks) == 1 { // we've reached the final key
+		return rval, nil
+	} else if m, ok = rval.(map[string]interface{}); !ok {
+		return nil, fmt.Errorf("malformed structure at %#v", rval)
+	} else { // 1+ more keys
+		return nestedMapLookup(m, ks[1:]...)
+	}
+}
 
 func buildStringQuery(input map[string]interface{}, rules []*Rule) (result string) {
 	for _, rule := range rules {
 		for index, condition := range rule.Conditions {
-			if value, ok := input[condition.Key]; ok {
-				valueType := reflect.
-					TypeOf(value).
-					String()
-				if valueType == "string" {
-					result += fmt.
-						Sprintf("(('%v') %s '%v') ",
-							value, condition.Operator,
-							condition.Value)
-				} else {
-					result += fmt.
-						Sprintf("(%v %s %v) ",
-							value,
-							condition.Operator,
-							condition.Value)
-				}
-				if index !=
-					(len(rule.Conditions)-1) && condition.Joint != "" {
-					result += fmt.
-						Sprintf(" %v ", condition.Joint)
-				}
+			var m = make(map[string]interface{})
+			args := strings.Split("data.temp", ".")
+			value, _ := nestedMapLookup(m, args...)
+			valueType := reflect.
+				TypeOf(value).
+				String()
+			if valueType == "string" {
+				result += fmt.
+					Sprintf("(('%v') %s '%v') ",
+						value, condition.Operator,
+						condition.Value)
+			} else {
+				result += fmt.
+					Sprintf("(%v %s %v) ",
+						value,
+						condition.Operator,
+						condition.Value)
+			}
+			if index !=
+				(len(rule.Conditions)-1) && condition.Joint != "" {
+				result += fmt.
+					Sprintf(" %v ", condition.Joint)
 			}
 		}
 	}
