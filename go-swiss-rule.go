@@ -28,9 +28,8 @@ func nestedMapLookup(m map[string]interface{}, ks ...string) (rval interface{}, 
 func buildStringQuery(input map[string]interface{}, rules []*Rule) (result string) {
 	for _, rule := range rules {
 		for index, condition := range rule.Conditions {
-			var m = make(map[string]interface{})
 			args := strings.Split("data.temp", ".")
-			value, _ := nestedMapLookup(m, args...)
+			value, _ := nestedMapLookup(input, args...)
 			valueType := reflect.
 				TypeOf(value).
 				String()
