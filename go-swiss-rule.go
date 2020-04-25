@@ -7,28 +7,30 @@ import (
 	"reflect"
 )
 
-func buildStringQuery(rules []*Rule, input map[string]interface{}) (result string) {
+func buildStringQuery(input map[string]interface{}, rules []*Rule) (result string) {
 	for _, rule := range rules {
 		for index, condition := range rule.Conditions {
-			valueType := reflect.
-				TypeOf(input[condition.Key]).
-				String()
-			if valueType == "string" {
-				result += fmt.
-					Sprintf("(('%v') %s '%v') ",
-						input[condition.Key], condition.Operator,
-						condition.Value)
-			} else {
-				result += fmt.
-					Sprintf("(%v %s %v) ",
-						input[condition.Key],
-						condition.Operator,
-						condition.Value)
-			}
-			if index !=
-				(len(rule.Conditions)-1) && condition.Joint != "" {
-				result += fmt.
-					Sprintf(" %v ", condition.Joint)
+			if value, ok := input[condition.Key]; ok {
+				valueType := reflect.
+					TypeOf(value).
+					String()
+				if valueType == "string" {
+					result += fmt.
+						Sprintf("(('%v') %s '%v') ",
+							value, condition.Operator,
+							condition.Value)
+				} else {
+					result += fmt.
+						Sprintf("(%v %s %v) ",
+							value,
+							condition.Operator,
+							condition.Value)
+				}
+				if index !=
+					(len(rule.Conditions)-1) && condition.Joint != "" {
+					result += fmt.
+						Sprintf(" %v ", condition.Joint)
+				}
 			}
 		}
 	}
@@ -47,7 +49,13 @@ func invokeActions(rules []*Rule) error {
 }
 
 func EvalAndInvoke(input map[string]interface{}, rules []*Rule) error {
-	if constraints := buildStringQuery(rules, input); constraints != "" {
+	if len(rules) < 0 {
+		return errors.SimpleError("Insufficient rules.")
+	}
+	if len(input) < 0 {
+		return errors.SimpleError("Insufficient input.")
+	}
+	if constraints := buildStringQuery(input, rules); constraints != "" {
 		result, exprError := expr.Eval(constraints, input)
 		if exprError != nil {
 			return exprError
@@ -60,8 +68,6 @@ func EvalAndInvoke(input map[string]interface{}, rules []*Rule) error {
 		} else {
 			return errors.SimpleError("Invalid Input")
 		}
-	} else {
-
 	}
 	return nil
 }
