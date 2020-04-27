@@ -92,8 +92,6 @@ func EvalAndInvoke(input map[string]interface{}, rules []*Rule) error {
 			if err != nil {
 				return err
 			}
-		} else {
-			return errors.SimpleError("Invalid Input")
 		}
 		return nil
 	}
