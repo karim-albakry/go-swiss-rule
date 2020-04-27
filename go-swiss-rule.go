@@ -25,11 +25,16 @@ func nestedMapLookup(m map[string]interface{}, ks ...string) (rval interface{}, 
 	}
 }
 
-func buildStringQuery(input map[string]interface{}, rules []*Rule) (result string) {
+func buildStringQuery(input map[string]interface{}, rules []*Rule) (result string, err error) {
 	for _, rule := range rules {
 		for index, condition := range rule.Conditions {
 			args := strings.Split(condition.Key, ".")
-			value, _ := nestedMapLookup(input, args...)
+			value, lookupErr := nestedMapLookup(input, args...)
+			if lookupErr != nil {
+				result = ""
+				err = lookupErr
+				return
+			}
 			valueType := reflect.
 				TypeOf(value).
 				String()
@@ -73,7 +78,11 @@ func EvalAndInvoke(input map[string]interface{}, rules []*Rule) error {
 	if len(input) < 0 {
 		return errors.SimpleError("Insufficient input.")
 	}
-	if constraints := buildStringQuery(input, rules); constraints != "" {
+	constraints, err := buildStringQuery(input, rules)
+	if err != nil {
+		return err
+	}
+	if constraints != "" {
 		result, exprError := expr.Eval(constraints, input)
 		if exprError != nil {
 			return exprError
