@@ -25,60 +25,53 @@ func nestedMapLookup(m map[string]interface{}, ks ...string) (rval interface{}, 
 	}
 }
 
-func buildStringQuery(input map[string]interface{}, rules []*Rule) (result string, err error) {
-	for _, rule := range rules {
-		for index, condition := range rule.Conditions {
-			args := strings.Split(condition.Key, ".")
-			value, lookupErr := nestedMapLookup(input, args...)
-			if lookupErr != nil {
-				result = ""
-				err = lookupErr
-				return
-			}
-			valueType := reflect.
-				TypeOf(value).
-				String()
-			if valueType == "string" {
-				result += fmt.
-					Sprintf("(('%v') %s '%v') ",
-						value, condition.Operator,
-						condition.Value)
-			} else {
-				result += fmt.
-					Sprintf("(%v %s %v) ",
-						value,
-						condition.Operator,
-						condition.Value)
-			}
-			if index !=
-				(len(rule.Conditions)-1) && condition.Joint != "" {
-				result += fmt.
-					Sprintf(" %v ", condition.Joint)
-			}
+func buildStringQuery(input map[string]interface{}, rule Rule) (result string, err error) {
+	for index, condition := range rule.Conditions {
+		args := strings.Split(condition.Key, ".")
+		value, lookupErr := nestedMapLookup(input, args...)
+		if lookupErr != nil {
+			result = ""
+			err = lookupErr
+			return
+		}
+		valueType := reflect.
+			TypeOf(value).
+			String()
+		if valueType == "string" {
+			result += fmt.
+				Sprintf("(('%v') %s '%v') ",
+					value, condition.Operator,
+					condition.Value)
+		} else {
+			result += fmt.
+				Sprintf("(%v %s %v) ",
+					value,
+					condition.Operator,
+					condition.Value)
+		}
+		if index !=
+			(len(rule.Conditions)-1) && condition.Joint != "" {
+			result += fmt.
+				Sprintf(" %v ", condition.Joint)
 		}
 	}
 	return
 }
 
-func invokeActions(rules []*Rule) error {
-	for _, rule := range rules {
-		for _, action := range rule.Actions {
-			if err := action.Fire(); err != nil {
-				return err
-			}
+func invokeActions(rule Rule) error {
+	for _, action := range rule.Actions {
+		if err := action.Fire(); err != nil {
+			return err
 		}
 	}
 	return nil
 }
 
-func EvalAndInvoke(input map[string]interface{}, rules []*Rule) error {
-	if len(rules) < 0 {
-		return errors.SimpleError("Insufficient rules.")
-	}
+func EvalAndInvoke(input map[string]interface{}, rule Rule) error {
 	if len(input) < 0 {
 		return errors.SimpleError("Insufficient input.")
 	}
-	constraints, err := buildStringQuery(input, rules)
+	constraints, err := buildStringQuery(input, rule)
 	if err != nil {
 		return err
 	}
@@ -88,7 +81,7 @@ func EvalAndInvoke(input map[string]interface{}, rules []*Rule) error {
 			return exprError
 		}
 		if result == true {
-			err := invokeActions(rules)
+			err := invokeActions(rule)
 			if err != nil {
 				return err
 			}
