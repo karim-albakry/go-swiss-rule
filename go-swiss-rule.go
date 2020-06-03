@@ -67,26 +67,26 @@ func invokeActions(rule Rule) error {
 	return nil
 }
 
-func EvalAndInvoke(input map[string]interface{}, rule Rule) error {
+func EvalAndInvoke(input map[string]interface{}, rule Rule) (bool, error) {
 	if len(input) < 0 {
-		return errors.SimpleError("Insufficient input.")
+		return false, errors.SimpleError("Insufficient input.")
 	}
 	constraints, err := buildStringQuery(input, rule)
 	if err != nil {
-		return err
+		return false, err
 	}
 	if constraints != "" {
 		result, exprError := expr.Eval(constraints, input)
 		if exprError != nil {
-			return exprError
+			return false, exprError
 		}
 		if result == true {
 			err := invokeActions(rule)
 			if err != nil {
-				return err
+				return false, err
 			}
 		}
-		return nil
+		return result == true, nil
 	}
-	return errors.SimpleError("No conditions to execute, review your conditions keys.")
+	return false, errors.SimpleError("No conditions to execute, review your conditions keys.")
 }
