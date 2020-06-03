@@ -58,8 +58,8 @@ func buildStringQuery(input map[string]interface{}, rule Rule) (result string, e
 	return
 }
 
-func invokeActions(rule Rule) error {
-	for _, action := range rule.Actions {
+func invokeActions(actions []IAction) error {
+	for _, action := range actions {
 		if err := action.Fire(); err != nil {
 			return err
 		}
@@ -80,11 +80,15 @@ func EvalAndInvoke(input map[string]interface{}, rule Rule) (bool, error) {
 		if exprError != nil {
 			return false, exprError
 		}
+		var actions []IAction
 		if result == true {
-			err := invokeActions(rule)
-			if err != nil {
-				return false, err
-			}
+			actions = rule.PositiveActions
+		} else {
+			actions = rule.NegativeActions
+		}
+		err := invokeActions(actions)
+		if err != nil {
+			return false, err
 		}
 		return result == true, nil
 	}
